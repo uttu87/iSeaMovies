@@ -9,6 +9,7 @@ import android.support.v17.leanback.widget.DetailsOverviewLogoPresenter;
 import android.support.v17.leanback.widget.DetailsOverviewRow;
 import android.support.v17.leanback.widget.FullWidthDetailsOverviewRowPresenter;
 import android.support.v17.leanback.widget.FullWidthDetailsOverviewSharedElementHelper;
+import android.support.v17.leanback.widget.HeaderItem;
 import android.support.v17.leanback.widget.ListRow;
 import android.support.v17.leanback.widget.ListRowPresenter;
 import android.support.v7.graphics.Palette;
@@ -17,9 +18,12 @@ import com.androidtv.iseasoft.iSeaMovies.App;
 import com.androidtv.iseasoft.iSeaMovies.Config;
 import com.androidtv.iseasoft.iSeaMovies.dagger.modules.HttpClientModule;
 import com.androidtv.iseasoft.iSeaMovies.data.Api.TheMovieDbAPI;
+import com.androidtv.iseasoft.iSeaMovies.data.models.CreditsResponse;
 import com.androidtv.iseasoft.iSeaMovies.data.models.Movie;
 import com.androidtv.iseasoft.iSeaMovies.data.models.MovieDetails;
+import com.androidtv.iseasoft.iSeaMovies.data.models.MovieResponse;
 import com.androidtv.iseasoft.iSeaMovies.data.models.PaletteColors;
+import com.androidtv.iseasoft.iSeaMovies.ui.movies.MoviePresenter;
 import com.androidtv.iseasoft.iSeaMovies.ui.utils.PaletteUtils;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
@@ -44,9 +48,11 @@ public class MovieDetailsFragment extends DetailsFragment implements Palette.Pal
 
     private Movie mMovie;
     private MovieDetails mMovieDetails;
-    private ArrayObjectAdapter mAdtapter;
+    private ArrayObjectAdapter mAdapter;
     private CustomMovieDetailsPresenter mFullWidthMovieDetailsPresenter;
     private DetailsOverviewRow mDetailsOverviewRow;
+    private ArrayObjectAdapter mCastAdapter = new ArrayObjectAdapter(new PersonPresenter());
+    ArrayObjectAdapter mRecommendationsAdapter = new ArrayObjectAdapter(new MoviePresenter());
 
     public static MovieDetailsFragment newInstance(Movie movie){
         Bundle args = new Bundle();
@@ -68,6 +74,8 @@ public class MovieDetailsFragment extends DetailsFragment implements Palette.Pal
         mMovie = getArguments().getParcelable(Movie.class.getSimpleName());
         setUpAdapter();
         setUpDetailsOverviewRow();
+        setupCastMembers();
+        setupRecommendationsRow();
     }
 
     /**
@@ -85,9 +93,9 @@ public class MovieDetailsFragment extends DetailsFragment implements Palette.Pal
         ClassPresenterSelector classPresenterSelector = new ClassPresenterSelector();
         classPresenterSelector.addClassPresenter(DetailsOverviewRow.class, mFullWidthMovieDetailsPresenter);
         classPresenterSelector.addClassPresenter(ListRow.class, new ListRowPresenter());
-        mAdtapter = new ArrayObjectAdapter(classPresenterSelector);
+        mAdapter = new ArrayObjectAdapter(classPresenterSelector);
 
-        setAdapter(mAdtapter);
+        setAdapter(mAdapter);
 
     }
 
@@ -96,7 +104,7 @@ public class MovieDetailsFragment extends DetailsFragment implements Palette.Pal
      */
     private void setUpDetailsOverviewRow() {
         mDetailsOverviewRow = new DetailsOverviewRow(new MovieDetails());
-        mAdtapter.add(mDetailsOverviewRow);
+        mAdapter.add(mDetailsOverviewRow);
         loadImage(HttpClientModule.POSTER_URL + mMovie.getPosterPath());
         fetchMovieDetails();
     }
@@ -159,7 +167,45 @@ public class MovieDetailsFragment extends DetailsFragment implements Palette.Pal
 
     private void notifyDetailsChanged(){
         mDetailsOverviewRow.setItem(mMovieDetails);
-        int index = mAdtapter.indexOf(mDetailsOverviewRow);
-        mAdtapter.notifyArrayItemRangeChanged(index, 1);
+        int index = mAdapter.indexOf(mDetailsOverviewRow);
+        mAdapter.notifyArrayItemRangeChanged(index, 1);
+    }
+
+    private void fetchCastMembers(){
+
+        mDbAPI.getCredits(mMovie.getId(), Config.API_KEY_URL)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::bindCastMembers, e -> {
+                    Timber.e(e, "Error fetching data: %s", e.getMessage());
+                });
+
+    }
+
+    private void setupCastMembers() {
+        mAdapter.add(new ListRow(new HeaderItem(0, "Cast"), mCastAdapter));
+        fetchCastMembers();
+    }
+
+    private void bindCastMembers(CreditsResponse response) {
+        mCastAdapter.addAll(0, response.getCast());
+    }
+
+    private void setupRecommendationsRow() {
+        mAdapter.add(new ListRow(new HeaderItem(2, "Recommendations"), mRecommendationsAdapter));
+        fetchRecommendations();
+    }
+
+    private void fetchRecommendations() {
+        mDbAPI.getRecommendations(mMovie.getId(), Config.API_KEY_URL)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::bindRecommendations, e -> {
+                    Timber.e(e, "Error fetching recommendations: %s", e.getMessage());
+                });
+    }
+
+    private void bindRecommendations(MovieResponse response) {
+        mRecommendationsAdapter.addAll(0, response.getResults());
     }
 }

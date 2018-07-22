@@ -10,4 +10,6 @@
     <dimen name="card_movie_width">180dp</dimen>
     <dimen name="card_movie_height">280dp</dimen>
 
+    <dimen name="lb_details_v2_card_height">430dp</dimen>
+
 </resources>
