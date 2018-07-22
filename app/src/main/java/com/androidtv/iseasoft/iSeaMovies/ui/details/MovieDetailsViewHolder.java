@@ -62,6 +62,18 @@ public class MovieDetailsViewHolder extends Presenter.ViewHolder {
                 mDirectorTv.setText(String.format(Locale.getDefault(), "Director: %s", movie.getDirector()));
             }
 
+            int primaryDarkColor = ContextCompat.getColor(mItemView.getContext(), R.color.primary_dark);
+            if(movie.getPaletteColors() != null){
+                movieTitleTV.setTextColor(movie.getPaletteColors().getTitleColor());
+                mOverviewLabelTV.setTextColor(movie.getPaletteColors().getTitleColor());
+                mTaglineTV.setTextColor(movie.getPaletteColors().getTextColor());
+                mRuntimeTV.setTextColor(movie.getPaletteColors().getTextColor());
+                movieYearTV.setTextColor(movie.getPaletteColors().getTextColor());
+                movieOverview.setTextColor(movie.getPaletteColors().getTextColor());
+                mDirectorTv.setTextColor(movie.getPaletteColors().getTextColor());
+                primaryDarkColor = movie.getPaletteColors().getStatusBarColor();
+            }
+
             int _16dp = (int) mItemView.getResources().getDimension(R.dimen.full_padding);
             int _8dp = (int) mItemView.getResources().getDimension(R.dimen.half_padding);
             float corner = mItemView.getResources().getDimension(R.dimen.genre_corner);
@@ -73,7 +85,7 @@ public class MovieDetailsViewHolder extends Presenter.ViewHolder {
                 GradientDrawable shape = new GradientDrawable();
                 shape.setShape(GradientDrawable.RECTANGLE);
                 shape.setCornerRadius(corner);
-                shape.setColor(ContextCompat.getColor(mItemView.getContext(), R.color.primary_dark));
+                shape.setColor(primaryDarkColor);
                 tv.setPadding(_8dp, _8dp, _8dp, _8dp);
                 tv.setBackground(shape);
 
