@@ -9,5 +9,5 @@ package com.androidtv.iseasoft.iSeaMovies;
  */
 
 public class Config {
-    public static final String API_KEY_URL = "80af67814d7ba2abcae1c73937414299";
+    public static final String API_KEY_URL = "";
 }
